@@ -4,42 +4,6 @@ class GridManager:
     每个20x20像素的格子只能存在一个单位
     """
     
-    # 顺时针查找顺序的偏移量，按照题目中提供的顺序：
-    # 21,22,23,24,25,
-    # 20, 7, 8, 9,10,
-    # 19, 6, 1, 2,11,
-    # 18, 5, 4, 3,12,
-    # 17,16,15,14,13,
-    #
-    # 对应坐标（以中心点1为原点）：
-    SEARCH_OFFSETS = [
-        (0, 0),   # 1 - 当前位置
-        (0, -1),  # 2 - 上
-        (1, -1),  # 3 - 右上
-        (1, 0),   # 4 - 右
-        (1, 1),   # 5 - 右下
-        (0, 1),   # 6 - 下
-        (-1, 1),  # 7 - 左下
-        (-1, 0),  # 8 - 左
-        (-1, -1), # 9 - 左上
-        (0, -2),  # 10 - 上2格
-        (1, -2),  # 11 - 右上2格
-        (2, -2),  # 12 - 右2上2格
-        (2, -1),  # 13 - 右2上1格
-        (2, 0),   # 14 - 右2格
-        (2, 1),   # 15 - 右2下1格
-        (2, 2),   # 16 - 右2下2格
-        (1, 2),   # 17 - 下2格右1格
-        (0, 2),   # 18 - 下2格
-        (-1, 2),  # 19 - 下2格左1格
-        (-2, 2),  # 20 - 下2格左2格
-        (-2, 1),  # 21 - 下1格左2格
-        (-2, 0),  # 22 - 左2格
-        (-2, -1), # 23 - 上1格左2格
-        (-2, -2), # 24 - 上2格左2格
-        (-1, -2), # 25 - 上2格左1格
-    ]
-
     def __init__(self, width=100, height=100):
         self.width = width
         self.height = height
@@ -113,12 +77,42 @@ class GridManager:
                 del self.grid[grid_pos]
             del self.unit_to_grid[unit.id]
 
-    def find_free_position(self, center_x, center_y):
+    def generate_search_offsets(self, max_radius):
+        """
+        动态生成搜索偏移量
+        按照顺时针螺旋方式生成坐标偏移
+        """
+        offsets = [(0, 0)]  # 首先是中心点
+        
+        # 按照半径逐层生成偏移量
+        for radius in range(1, max_radius + 1):
+            # 从上边开始，顺时针生成
+            # 上边：从左到右
+            for x in range(-radius, radius + 1):
+                offsets.append((x, -radius))
+            
+            # 右边：从上到下（排除顶点）
+            for y in range(-radius + 1, radius):
+                offsets.append((radius, y))
+            
+            # 下边：从右到左
+            for x in range(radius, -radius - 1, -1):
+                offsets.append((x, radius))
+            
+            # 左边：从下到上（排除顶点）
+            for y in range(radius - 1, -radius, -1):
+                offsets.append((-radius, y))
+        
+        return offsets
+
+    def find_free_position(self, center_x, center_y, max_radius=3):
         """
         查找中心位置附近空闲的网格位置
-        按照顺时针方向查找
+        按照顺时针螺旋方向查找
         """
-        for dx, dy in self.SEARCH_OFFSETS:
+        search_offsets = self.generate_search_offsets(max_radius)
+        
+        for dx, dy in search_offsets:
             new_x = center_x + dx
             new_y = center_y + dy
             
