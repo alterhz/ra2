@@ -70,13 +70,13 @@ class InputHandler:
     def handle_room_list_click(self, pos):
         """处理房间列表点击"""
         # 检查点击位置是否在房间列表项上
-        y_offset = 50
+        y_offset = 250
         for room in self.client.room_list:
-            room_rect = pygame.Rect(10, y_offset, 300, 30)
+            room_rect = pygame.Rect(10, y_offset, 350, 45)
             if room_rect.collidepoint(pos):
                 self.client.selected_room_id = room['room_id']
                 break
-            y_offset += 35
+            y_offset += 50
     
     def handle_left_click(self, pos):
         self.dragging = True

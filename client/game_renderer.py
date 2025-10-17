@@ -165,14 +165,16 @@ class GameRenderer:
             y_offset = 250
             for i, room in enumerate(self.client.room_list):
                 room_text = self.font.render(f"{room['room_id']} ({room['player_count']} 玩家)", True, self.colors['ui_text'])
-                room_rect = pygame.Rect(10, y_offset, 300, 30)
+                room_rect = pygame.Rect(10, y_offset, 350, 45)
                 
                 # 检查是否被选中
                 if self.client.selected_room_id == room['room_id']:
                     pygame.draw.rect(self.screen, (50, 50, 50), room_rect)
+                else:
+                    pygame.draw.rect(self.screen, (0, 50, 50), room_rect)
                 
                 self.screen.blit(room_text, (15, y_offset + 5))
-                y_offset += 35
+                y_offset += 50
             
             # 绘制按钮
             self.draw_button(self.create_room_button_rect, "创建房间")

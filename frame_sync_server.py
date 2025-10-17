@@ -535,7 +535,7 @@ class FrameSyncServer:
                     break
 
             # 清理旧帧
-            old_frames = [f for f in room.frame_inputs if f < room.current_frame - 60]
+            old_frames = [f for f in room.frame_inputs.keys() if f < room.current_frame - 60]
             for f in old_frames:
                 del room.frame_inputs[f]
 
