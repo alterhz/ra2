@@ -529,7 +529,7 @@ class FrameSyncServer:
 # 添加main函数
 def main():
     """服务器主入口函数"""
-    server = FrameSyncServer()
+    server = FrameSyncServer("0.0.0.0", 8888)
     server.run()
 
 if __name__ == "__main__":
