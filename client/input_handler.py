@@ -123,15 +123,32 @@ class InputHandler:
         closest_distance = float('inf')
         
         for unit in self.client.game_state['units'].values():
-            if same_player_id(unit['player_id'], self.client.player_id):
-                distance = ((unit['x'] - pos[0])**2 + (unit['y'] - pos[1])**2)**0.5
+            # 检查unit是Unit对象还是字典
+            if hasattr(unit, 'player_id'):
+                # Unit对象
+                unit_player_id = unit.player_id
+                unit_x, unit_y = unit.x, unit.y
+                unit_id = unit.id
+            else:
+                # 字典格式
+                unit_player_id = unit['player_id']
+                unit_x, unit_y = unit['x'], unit['y']
+                unit_id = unit['id']
+                
+            if same_player_id(unit_player_id, self.client.player_id):
+                distance = ((unit_x - pos[0])**2 + (unit_y - pos[1])**2)**0.5
                 if distance <= click_radius and distance < closest_distance:
                     closest_unit = unit
                     closest_distance = distance
         
         # 如果找到单位，则选中它
         if closest_unit:
-            self.client.selected_units.append(closest_unit['id'])
+            # 获取单位ID
+            if hasattr(closest_unit, 'id'):
+                unit_id = closest_unit.id
+            else:
+                unit_id = closest_unit['id']
+            self.client.selected_units.append(unit_id)
     
     def handle_box_selection(self, pos):
         """处理框选单位"""
@@ -144,15 +161,40 @@ class InputHandler:
         
         self.client.selected_units.clear()
         for unit in self.client.game_state['units'].values():
-            if same_player_id(unit['player_id'], self.client.player_id) and left <= unit['x'] <= right and top <= unit['y'] <= bottom:
-                self.client.selected_units.append(unit['id'])
+            # 检查unit是Unit对象还是字典
+            if hasattr(unit, 'player_id'):
+                # Unit对象
+                unit_player_id = unit.player_id
+                unit_x, unit_y = unit.x, unit.y
+            else:
+                # 字典格式
+                unit_player_id = unit['player_id']
+                unit_x, unit_y = unit['x'], unit['y']
+                
+            if same_player_id(unit_player_id, self.client.player_id) and left <= unit_x <= right and top <= unit_y <= bottom:
+                # 获取单位ID
+                if hasattr(unit, 'id'):
+                    unit_id = unit.id
+                else:
+                    unit_id = unit['id']
+                self.client.selected_units.append(unit_id)
     
     def handle_keydown(self, key):
         if key == pygame.K_a:
             self.client.selected_units = []
             for unit in self.client.game_state['units'].values():
-                if same_player_id(unit['player_id'], self.client.player_id):
-                    self.client.selected_units.append(unit['id'])
+                # 检查unit是Unit对象还是字典
+                if hasattr(unit, 'player_id'):
+                    # Unit对象
+                    unit_player_id = unit.player_id
+                    unit_id = unit.id
+                else:
+                    # 字典格式
+                    unit_player_id = unit['player_id']
+                    unit_id = unit['id']
+                    
+                if same_player_id(unit_player_id, self.client.player_id):
+                    self.client.selected_units.append(unit_id)
         
         elif key == pygame.K_t:
             if self.client.player_id is not None:

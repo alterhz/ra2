@@ -4,6 +4,7 @@ import time
 import math
 from typing import Optional, TYPE_CHECKING
 from .reliable_udp import ReliableUDP
+from .unit import Unit
 
 if TYPE_CHECKING:
     from .input_handler import InputHandler
@@ -308,17 +309,14 @@ class FrameSyncClient:
             # 创建初始单位
             for i in range(5):
                 unit_id = f"{player_id}_{i}"
-                self.game_state['units'][unit_id] = {
-                    'id': unit_id,
-                    'player_id': int(player_id),
-                    'type': 'infantry',
-                    'x': base_x + i * 40,
-                    'y': base_y,
-                    'target_x': base_x + i * 40,
-                    'target_y': base_y,
-                    'health': 100,
-                    'speed': 2.0
-                }
+                unit = Unit(
+                    unit_id=unit_id,
+                    player_id=int(player_id),
+                    unit_type='infantry',
+                    x=base_x + i * 40,
+                    y=base_y
+                )
+                self.game_state['units'][unit_id] = unit
             
             # 创建初始建筑
             building_id = f"{player_id}_base"
@@ -425,9 +423,8 @@ class FrameSyncClient:
             for unit_id in unit_ids:
                 if unit_id in self.game_state['units']:
                     unit = self.game_state['units'][unit_id]
-                    if same_player_id(unit['player_id'], player_id):
-                        unit['target_x'] = target_x
-                        unit['target_y'] = target_y
+                    if same_player_id(unit.player_id, player_id):
+                        unit.move_to(target_x, target_y)
                         print(f"移动单位: {unit_id}, 目标位置: ({target_x}, {target_y})")
         
         elif input_type == 'produce_unit':
@@ -438,30 +435,21 @@ class FrameSyncClient:
                 building = self.game_state['buildings'][building_id]
                 if same_player_id(building['player_id'], player_id):
                     unit_id = f"{player_id}_{len(self.game_state['units'])}"
-                    self.game_state['units'][unit_id] = {
-                        'id': unit_id,
-                        'player_id': player_id,
-                        'type': unit_type,
-                        'x': building['x'] + 50,
-                        'y': building['y'],
-                        'target_x': building['x'] + 50,
-                        'target_y': building['y'],
-                        'health': 100,
-                        'speed': 2.0
-                    }
+                    unit = Unit(
+                        unit_id=unit_id,
+                        player_id=player_id,
+                        unit_type=unit_type,
+                        x=building['x'] + 50,
+                        y=building['y']
+                    )
+                    self.game_state['units'][unit_id] = unit
                     print(f"生产单位: {unit_id}, 类型: {unit_type}")
     
     def update_game_state(self):
         """更新游戏状态"""
         # 更新单位位置
         for unit_id, unit in self.game_state['units'].items():
-            dx = unit['target_x'] - unit['x']
-            dy = unit['target_y'] - unit['y']
-            distance = math.sqrt(dx*dx + dy*dy)
-            
-            if distance > 2:
-                unit['x'] += (dx / distance) * min(unit['speed'], distance)
-                unit['y'] += (dy / distance) * min(unit['speed'], distance)
+            unit.update_position()
     
     def run_frame(self):
         """运行客户端帧逻辑"""

@@ -199,14 +199,27 @@ class GameRenderer:
                 pygame.draw.rect(self.screen, color, (x, y, tile_size, tile_size))
     
     def draw_unit(self, unit):
-        player_color_key = f'player{unit["player_id"]}'
+        # 检查unit是Unit对象还是字典
+        if hasattr(unit, 'player_id'):
+            # Unit对象
+            player_id = unit.player_id
+            unit_type = unit.type
+            x, y = unit.x, unit.y
+            health = unit.health
+        else:
+            # 字典格式（为了兼容性）
+            player_id = unit["player_id"]
+            unit_type = unit["type"]
+            x, y = unit["x"], unit["y"]
+            health = unit["health"]
+            
+        player_color_key = f'player{player_id}'
         player_color = self.colors.get(player_color_key, (128, 128, 128))  # 默认灰色
-        x, y = unit['x'], unit['y']
         
         # 绘制单位形状
-        if unit['type'] == 'miner':
+        if unit_type == 'miner':
             pygame.draw.circle(self.screen, player_color, (x, y), 10)
-        elif unit['type'] == 'tank':
+        elif unit_type == 'tank':
             pygame.draw.polygon(self.screen, player_color, [
                 (x, y-12),
                 (x-10, y+8),
@@ -217,11 +230,17 @@ class GameRenderer:
         
         # 绘制血条
         health_width = 30
-        health_ratio = unit['health'] / 100
+        health_ratio = health / 100
         pygame.draw.rect(self.screen, (255, 0, 0), (x-15, y-20, health_width, 4))
         pygame.draw.rect(self.screen, (0, 255, 0), (x-15, y-20, health_width * health_ratio, 4))
         
-        if unit['id'] in self.client.selected_units:
+        # 检查是否选中
+        if hasattr(unit, 'id'):
+            unit_id = unit.id
+        else:
+            unit_id = unit['id']
+            
+        if unit_id in self.client.selected_units:
             pygame.draw.circle(self.screen, self.colors['selected'], (x, y), 15, 2)
     
     def draw_building(self, building):
