@@ -87,11 +87,14 @@ class InputHandler:
         if not self.client.selected_units:
             return
         
+        # x, y 都要是20的整数倍
+        fixed_pos = (pos[0] // 20 * 20 + 10, pos[1] // 20 * 20 + 10)
+        
         input_data = {
             'type': 'move_units',
             'unit_ids': self.client.selected_units,
-            'x': pos[0],
-            'y': pos[1]
+            'x': fixed_pos[0],
+            'y': fixed_pos[1]
         }
         
         self.client.input_buffer.append(input_data)
