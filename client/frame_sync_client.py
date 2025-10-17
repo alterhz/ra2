@@ -451,7 +451,7 @@ class FrameSyncClient:
                         y=building['y']
                     )
                     # 绑定单位到网格
-                    self.grid_manager.bind_unit_to_grid(unit)
+                    self.grid_manager.bind_unit_to_grid(unit, teleport=True)
                     self.game_state['units'][unit_id] = unit
                     print(f"生产单位: {unit_id}, 类型: {unit_type}")
     
@@ -517,13 +517,14 @@ class FrameSyncClient:
                 should_process_frame = False
 
         if not should_process_frame:
-            self.send_ping()
             return False
         
         # 每帧都上报输入，包括空输入
         self.send_inputs()
         
         self.run_one_frame()
+
+        self.send_ping()
 
         return True
 

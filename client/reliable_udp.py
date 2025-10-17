@@ -217,7 +217,7 @@ class ReliableUDP:
                     del state['ack_history'][ack_seq]
                     # print(f"删除确认历史: {ack_seq}, 地址: {addr}")
                 else:
-                    print(f"确认包 {ack_seq} 不存在，地址: {addr}, state: {state}")
+                    print(f"确认包 {ack_seq} 不存在，地址: {addr}")
             
             elif packet_type == PacketType.HEARTBEAT:
                 # 心跳包 - 更新连接状态

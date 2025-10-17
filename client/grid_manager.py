@@ -32,9 +32,11 @@ class GridManager:
         """
         return (grid_x, grid_y) in self.grid
 
-    def bind_unit_to_grid(self, unit):
+    def bind_unit_to_grid(self, unit, teleport=False):
         """
         将单位绑定到网格位置
+        :param unit: 要绑定的单位对象
+        :param teleport: 是否瞬移，如果为True，则单位会立即移动到目标位置
         """
         # 更新单位的网格坐标
         unit.update_grid_position()
@@ -43,7 +45,7 @@ class GridManager:
         if unit.id in self.unit_to_grid:
             current_grid = self.unit_to_grid[unit.id]
             if current_grid[0] == unit.grid_x and current_grid[1] == unit.grid_y:
-                print(f"{unit.id} is already at ({unit.x}, {unit.y}), from grid ({unit.grid_x}, {unit.grid_y})")
+                # print(f"{unit.id} is already at ({unit.x}, {unit.y}), from grid ({unit.grid_x}, {unit.grid_y})")
                 return
         
         # 检查当前位置是否被占用
@@ -57,10 +59,21 @@ class GridManager:
             # 更新单位的实际坐标
             to_x = new_grid_x * 20 + 10  # 格子中心
             to_y = new_grid_y * 20 + 10
-            unit.move_to(to_x, to_y)
+            
+            if teleport:
+                # 瞬移模式：直接设置单位位置
+                unit.x = to_x
+                unit.y = to_y
+                unit.target_x = to_x
+                unit.target_y = to_y
+                unit.is_moving = False
+            else:
+                # 正常模式：使用移动方法
+                unit.move_to(to_x, to_y)
+                
             unit.grid_x = new_grid_x
             unit.grid_y = new_grid_y
-            print(f"{unit.id} moved from ({old_x}, {old_y}) to ({unit.x}, {unit.y}), from grid ({old_grid_x}, {old_grid_y}) to ({new_grid_x}, {new_grid_y})")
+            # print(f"{unit.id} moved from ({old_x}, {old_y}) to ({unit.x}, {unit.y}), from grid ({old_grid_x}, {old_grid_y}) to ({new_grid_x}, {new_grid_y})")
 
         
         # 绑定单位到网格

@@ -49,13 +49,15 @@ class GameRenderer:
         self.start_button_hover_color = (0, 255, 0)  # 亮绿色
         self.start_button_text_color = (255, 255, 255)  # 白色
         
-        # 大厅界面按钮
-        self.create_room_button_rect = pygame.Rect(650, 100, 140, 40)
-        self.join_room_button_rect = pygame.Rect(650, 160, 140, 40)
-        self.refresh_room_button_rect = pygame.Rect(650, 220, 140, 40)
-        
         # 断线重连按钮
-        self.reconnect_button_rect = pygame.Rect(650, 280, 140, 40)
+        self.reconnect_button_rect = pygame.Rect(860, 20, 140, 40)
+
+        # 大厅界面按钮
+        self.create_room_button_rect = pygame.Rect(860, 20, 140, 40)
+        self.join_room_button_rect = pygame.Rect(860, 80, 140, 40)
+        self.refresh_room_button_rect = pygame.Rect(860, 140, 140, 40)
+        
+
         
         self.colors = {
             'background': (0, 0, 0),
@@ -144,7 +146,7 @@ class GameRenderer:
             self.draw_button(self.create_room_button_rect, "创建房间")
             self.draw_button(self.join_room_button_rect, "加入房间")
             self.draw_button(self.refresh_room_button_rect, "刷新列表")
-            self.draw_button(self.reconnect_button_rect, "断线重连")
+            # self.draw_button(self.reconnect_button_rect, "断线重连")
             
         except Exception as e:
             print(f"绘制大厅界面时出错: {e}")
