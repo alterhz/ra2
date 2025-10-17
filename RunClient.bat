@@ -1,1 +1,1 @@
- C:\MyZiegler\demo\Python\ra2\.venv\Scripts\python.exe c:/MyZiegler/demo/Python/ra2/frame_sync_client.py
+.venv\Scripts\python.exe frame_sync_client.py
