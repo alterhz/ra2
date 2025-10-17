@@ -12,11 +12,17 @@ class Unit:
         self.target_y = target_y if target_y is not None else y
         self.health = health
         self.speed = speed
+        # 添加格子坐标属性
+        self.grid_x = int(x // 20)
+        self.grid_y = int(y // 20)
+        self.is_moving = False
 
     def move_to(self, target_x, target_y):
         """
         设置单位的移动目标位置
         """
+        # 移动开始时，解绑格子
+        self.is_moving = True
         self.target_x = target_x
         self.target_y = target_y
 
@@ -31,6 +37,11 @@ class Unit:
         if distance > 2:
             self.x += (dx / distance) * min(self.speed, distance)
             self.y += (dy / distance) * min(self.speed, distance)
+        else:
+            # 移动停止时，绑定格子
+            self.is_moving = False
+            self.x = self.target_x
+            self.y = self.target_y
 
     def to_dict(self):
         """
@@ -64,3 +75,10 @@ class Unit:
             health=data.get('health', 100),
             speed=data.get('speed', 2.0)
         )
+
+    def update_grid_position(self):
+        """
+        更新单位所在的格子位置
+        """
+        self.grid_x = int(self.x // 20)
+        self.grid_y = int(self.y // 20)

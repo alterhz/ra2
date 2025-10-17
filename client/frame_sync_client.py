@@ -5,6 +5,7 @@ import math
 from typing import Optional, TYPE_CHECKING
 from .reliable_udp import ReliableUDP
 from .unit import Unit
+from .grid_manager import GridManager
 
 if TYPE_CHECKING:
     from .input_handler import InputHandler
@@ -31,6 +32,9 @@ class FrameSyncClient:
             'buildings': {},
             'resources': []
         }
+        
+        # 网格管理系统
+        self.grid_manager = GridManager()
         
         # 帧同步数据
         self.current_frame = 0
@@ -316,6 +320,8 @@ class FrameSyncClient:
                     x=base_x + i * 40,
                     y=base_y
                 )
+                # 绑定单位到网格
+                self.grid_manager.bind_unit_to_grid(unit)
                 self.game_state['units'][unit_id] = unit
             
             # 创建初始建筑
@@ -425,6 +431,8 @@ class FrameSyncClient:
                     unit = self.game_state['units'][unit_id]
                     if same_player_id(unit.player_id, player_id):
                         unit.move_to(target_x, target_y)
+                        # 解绑单位从网格（开始移动时）
+                        self.grid_manager.unbind_unit_from_grid(unit)
                         print(f"移动单位: {unit_id}, 目标位置: ({target_x}, {target_y})")
         
         elif input_type == 'produce_unit':
@@ -442,6 +450,8 @@ class FrameSyncClient:
                         x=building['x'] + 50,
                         y=building['y']
                     )
+                    # 绑定单位到网格
+                    self.grid_manager.bind_unit_to_grid(unit)
                     self.game_state['units'][unit_id] = unit
                     print(f"生产单位: {unit_id}, 类型: {unit_type}")
     
@@ -449,7 +459,13 @@ class FrameSyncClient:
         """更新游戏状态"""
         # 更新单位位置
         for unit_id, unit in self.game_state['units'].items():
+            old_x, old_y = unit.x, unit.y
             unit.update_position()
+            
+            # 检查单位是否停止移动
+            if not unit.is_moving and (old_x != unit.x or old_y != unit.y):
+                # 单位停止移动，绑定到网格
+                self.grid_manager.bind_unit_to_grid(unit)
     
     def run_frame(self):
         """运行客户端帧逻辑"""
