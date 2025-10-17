@@ -176,6 +176,24 @@ class GameRenderer:
             player_text = self.font.render(f"玩家ID: {self.client.player_id}", True, self.colors['ui_text'])
             self.screen.blit(player_text, (10, 50))
             
+            # 显示房间内的所有玩家
+            y_offset = 100
+            players_title = self.font.render("房间内玩家:", True, self.colors['ui_text'])
+            self.screen.blit(players_title, (10, y_offset))
+            y_offset += 30
+            
+            # 显示玩家列表
+            for player_id, player_info in self.client.players.items():
+                # 标记房主
+                host_marker = " [房主]" if player_info.get('is_host', False) else ""
+                player_name = f"{player_info.get('name', 'Player' + str(player_id))}{host_marker}"
+                player_color = player_info.get('color', [255, 255, 255])
+                
+                # 创建带颜色的玩家文本
+                player_text = self.font.render(player_name, True, player_color)
+                self.screen.blit(player_text, (20, y_offset))
+                y_offset += 25
+            
             # 检查是否是房主（第一个加入房间的玩家）
             if hasattr(self.client, 'room_id') and self.client.room_id:
                 # 获取房间中的所有玩家地址

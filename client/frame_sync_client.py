@@ -214,7 +214,9 @@ class FrameSyncClient:
             self._handle_join_room_failed(data)
         elif msg_type == 'room_list':
             self._handle_room_list(data)
-    
+        elif msg_type == 'player_list':
+            self._handle_player_list(data)
+
     def _handle_connect_failed(self, data: dict):
         """处理连接失败"""
         reason = data.get('reason', '未知错误')
@@ -590,3 +592,17 @@ class FrameSyncClient:
         self.udp.send_reliable(start_request, self.server_addr)
         print("已发送开始游戏请求")
         return True
+    
+    def _handle_player_list(self, data: dict):
+        """处理玩家列表"""
+        self.players = data.get('players', {})
+        print(f"收到玩家列表: {self.players}")
+        
+        # 如果游戏已经开始，更新游戏对象
+        if self.game_started:
+            self._update_game_objects_with_players()
+    
+    def _update_game_objects_with_players(self):
+        """根据玩家列表更新游戏对象"""
+        # 这里可以添加根据玩家列表更新游戏对象的逻辑
+        pass

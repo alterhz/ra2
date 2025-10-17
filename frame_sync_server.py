@@ -25,6 +25,18 @@ class GameRoom:
         # 房间销毁相关
         self.empty_since = None  # 房间变空的时间戳
 
+    def get_players_info(self):
+        """获取房间内所有玩家的信息"""
+        players_info = {}
+        for addr, player in self.players.items():
+            players_info[player['id']] = {
+                'id': player['id'],
+                'name': player['name'],
+                'color': player['color'],
+                'is_host': addr == self.host_addr
+            }
+        return players_info
+
 class FrameSyncServer:
     def __init__(self, host='127.0.0.1', port=8888):
         self.udp = ReliableUDP(host, port, is_server=True)
@@ -119,10 +131,12 @@ class FrameSyncServer:
         
         # 添加玩家到房间
         player_id = len(room.players) + 1
+
+        player_name = f'Player{player_id}'
         
         room.players[addr] = {
             'id': player_id,
-            'name': data.get('name', f'Player{player_id}'),
+            'name': player_name,
             'color': self._get_player_color(player_id),
             'connected': True,
             'last_input_frame': 0
@@ -142,7 +156,10 @@ class FrameSyncServer:
         
         self.udp.send_reliable(response, addr)
         print(f"玩家 {player_id} 已加入房间 {room_id}: {addr}，玩家数量: {len(room.players)}")
-    
+        
+        # 广播玩家列表给房间内所有玩家
+        self._broadcast_player_list(room)
+
     def _handle_get_room_list(self, addr: tuple, data: dict):
         """处理获取房间列表请求"""
         # 获取未开始游戏的房间列表
@@ -215,10 +232,13 @@ class FrameSyncServer:
         # 如果这是第一个玩家，则设置为房主
         if len(room.players) == 0:
             room.host_addr = addr
+
+        # 如果
+        player_name = f'Player{player_id}'
         
         room.players[addr] = {
             'id': player_id,
-            'name': data.get('name', f'Player{player_id}'),
+            'name': player_name,
             'color': self._get_player_color(player_id),
             'connected': True,
             'last_input_frame': 0
@@ -239,7 +259,10 @@ class FrameSyncServer:
         
         self.udp.send_reliable(response, addr)
         print(f"玩家 {player_id} 已连接到房间 {room_id}: {addr}，玩家数量: {len(room.players)}")
-    
+        
+        # 广播玩家列表给房间内所有玩家
+        self._broadcast_player_list(room)
+
     def _handle_player_input(self, addr: tuple, data: dict):
         """处理玩家输入"""
         # 检查玩家是否已连接
@@ -340,7 +363,11 @@ class FrameSyncServer:
             elif not room.game_started and len(room.players) == 0:
                 room.empty_since = time.time()
                 print(f"房间 {room_id} 内所有玩家离开，记录房间变空时间")
-    
+            
+            # 广播玩家列表给房间内剩余的玩家
+            if len(room.players) > 0:
+                self._broadcast_player_list(room)
+
     def _get_player_color(self, player_id: int) -> list:
         """获取玩家颜色"""
         colors = [
@@ -525,6 +552,18 @@ class FrameSyncServer:
             print("服务器关闭")
         finally:
             self.udp.close()
+
+    def _broadcast_player_list(self, room: GameRoom):
+        """广播玩家列表给房间内所有玩家"""
+        players_info = room.get_players_info()
+        player_list_msg = {
+            'type': 'player_list',
+            'players': players_info
+        }
+        
+        for addr in room.players:
+            self.udp.send_reliable(player_list_msg, addr)
+        print(f"房间 {room.room_id} 广播玩家列表: {players_info}")
 
 # 添加main函数
 def main():
