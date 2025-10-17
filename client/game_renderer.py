@@ -1,5 +1,6 @@
 import pygame
 import time
+import os
 
 
 class GameRenderer:
@@ -10,6 +11,28 @@ class GameRenderer:
         self.screen = pygame.display.set_mode((self.window_width, self.window_height), pygame.RESIZABLE)
         pygame.display.set_caption("红警 - 可靠帧同步")
         self.clock = pygame.time.Clock()
+        
+        # 加载房间背景图片
+        self.room_background = None
+        self.lobby_background = None
+        try:
+            # 加载大厅背景图片
+            lobby_background_path = os.path.join("resources", "loading.jpg")
+            if os.path.exists(lobby_background_path):
+                self.lobby_background = pygame.image.load(lobby_background_path)
+                print(f"成功加载大厅背景图片: {lobby_background_path}")
+            else:
+                print(f"大厅背景图片不存在: {lobby_background_path}")
+                
+            # 加载房间背景图片
+            background_path = os.path.join("resources", "background_room.jpg")
+            if os.path.exists(background_path):
+                self.room_background = pygame.image.load(background_path)
+                print(f"成功加载房间背景图片: {background_path}")
+            else:
+                print(f"房间背景图片不存在: {background_path}")
+        except Exception as e:
+            print(f"加载背景图片失败: {e}")
         
         # 改进字体初始化，增加错误处理和备选方案
         try:
@@ -44,13 +67,13 @@ class GameRenderer:
         self.fps_update_interval = 0.5  # 每0.5秒更新一次FPS
         
         # 按钮相关属性
-        self.start_button_rect = pygame.Rect(650, 10, 140, 40)
+        self.start_button_rect = pygame.Rect(650, 300, 140, 40)
         self.start_button_color = (0, 200, 0)  # 绿色
         self.start_button_hover_color = (0, 255, 0)  # 亮绿色
         self.start_button_text_color = (255, 255, 255)  # 白色
         
         # 断线重连按钮
-        self.reconnect_button_rect = pygame.Rect(860, 20, 140, 40)
+        self.reconnect_button_rect = pygame.Rect(700, 20, 140, 40)
 
         # 大厅界面按钮
         self.create_room_button_rect = pygame.Rect(860, 20, 140, 40)
@@ -124,13 +147,22 @@ class GameRenderer:
     
     def draw_lobby(self):
         """绘制大厅界面"""
+        # 绘制大厅背景图片（如果存在）
+        if self.lobby_background:
+            # 缩放背景图片以适应窗口大小
+            scaled_background = pygame.transform.scale(self.lobby_background, (self.window_width, self.window_height))
+            self.screen.blit(scaled_background, (0, 0))
+        else:
+            # 如果没有背景图片，则使用纯色背景
+            self.screen.fill(self.colors['background'])
+            
         # 绘制房间列表标题
         try:
             title_text = self.font.render("房间列表", True, self.colors['ui_text'])
-            self.screen.blit(title_text, (10, 10))
+            self.screen.blit(title_text, (10, 200))
             
             # 绘制房间列表
-            y_offset = 50
+            y_offset = 250
             for i, room in enumerate(self.client.room_list):
                 room_text = self.font.render(f"{room['room_id']} ({room['player_count']} 玩家)", True, self.colors['ui_text'])
                 room_rect = pygame.Rect(10, y_offset, 300, 30)
@@ -168,6 +200,15 @@ class GameRenderer:
     
     def draw_waiting_room(self):
         """绘制等待房间界面"""
+        # 绘制背景图片（如果存在）
+        if self.room_background:
+            # 缩放背景图片以适应窗口大小
+            scaled_background = pygame.transform.scale(self.room_background, (self.window_width, self.window_height))
+            self.screen.blit(scaled_background, (0, 0))
+        else:
+            # 如果没有背景图片，则使用纯色背景
+            self.screen.fill(self.colors['background'])
+        
         try:
             # 显示房间信息
             room_text = self.font.render(f"房间ID: {self.client.room_id}", True, self.colors['ui_text'])
