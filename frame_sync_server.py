@@ -1,7 +1,7 @@
 import time
 import json
 from collections import defaultdict
-from reliable_udp import ReliableUDP
+from client.reliable_udp import ReliableUDP
 
 class GameRoom:
     """游戏房间类，每个房间有独立的帧同步状态"""

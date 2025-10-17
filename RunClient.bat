@@ -1,1 +1,1 @@
-.venv\Scripts\python.exe frame_sync_client.py
+.venv\Scripts\python.exe test_client.py
