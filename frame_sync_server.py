@@ -462,8 +462,8 @@ class FrameSyncServer:
         for room_id, room in list(self.rooms.items()):
             # 检查是否需要销毁房间（房间为空且超过1分钟）
             if len(room.players) == 0 and room.empty_since is not None:
-                if time.time() - room.empty_since >= 60:  # 60秒 = 1分钟
-                    print(f"房间 {room_id} 已空置超过1分钟，自动销毁")
+                if time.time() - room.empty_since >= 1:  # 60秒 = 1分钟
+                    print(f"房间 {room_id} 已空置超过1秒，自动销毁")
                     del self.rooms[room_id]
                     continue  # 跳过此房间的后续处理
             

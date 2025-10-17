@@ -82,6 +82,10 @@ class FrameSyncClient:
         self.logic_fps = 0.0
         self.logic_fps_update_interval = 1.0  # 每1秒更新一次逻辑帧率
         
+        # 房间列表更新
+        self.last_room_list_update = 0  # 上次获取房间列表的时间
+        self.room_list_update_interval = 3.0  # 每3秒获取一次房间列表
+        
         print("帧同步客户端初始化完成")
         
         # 初始化UDP连接
@@ -481,6 +485,11 @@ class FrameSyncClient:
             self.logic_fps = self.logic_frame_count / (current_time - self.last_logic_frame_time)
             self.logic_frame_count = 0
             self.last_logic_frame_time = current_time
+        
+        # 在大厅中时定期获取房间列表
+        if self.in_lobby and current_time - self.last_room_list_update >= self.room_list_update_interval:
+            self.get_room_list()
+            self.last_room_list_update = current_time
         
         if not self.game_started:
             # 即使游戏未开始也发送ping
