@@ -1098,10 +1098,10 @@ class InputHandler:
         # 这个方法已废弃，绘制逻辑已移到 GameRenderer.draw_ui 中
         pass
 
-def main():
+def start_client(ip, port):
     pygame.init()
     
-    client = FrameSyncClient()
+    client = FrameSyncClient(ip, port)
     renderer = GameRenderer(client)
     input_handler = InputHandler(client, renderer)
     
@@ -1121,4 +1121,4 @@ def main():
     sys.exit()
 
 if __name__ == "__main__":
-    main()
+    start_client("127.0.0.1", 8888)
