@@ -314,7 +314,6 @@ class GameRenderer:
                 index = unit.direction_to_index(direction)
                 sprite_x = 0
                 sprite_y = index * 128
-                print(f"direction: {direction}, sprite_y: {sprite_y}")
                 sprite_rect = pygame.Rect(sprite_x, sprite_y, 128, 128)
                 sprite = self.tank_sprites.subsurface(sprite_rect)
                 
