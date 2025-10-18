@@ -16,7 +16,18 @@ class Unit:
         self.grid_x = int(x // 20)
         self.grid_y = int(y // 20)
         self.is_moving = False
-
+        """
+        添加方向属性，0-7表示8个方向，
+        0=(-157.5,157.5), 
+        1=(-157.7, -112.5), 
+        2=(-112.5, -67.5), 
+        3=(-67.5, -22.5), 
+        4=(-22.5, 22.5), 
+        5=(22.5, 67.5), 
+        6=(67.5, 112.5), 
+        7=(112.5, 157.5)
+        """
+        self.direction = 0  
     def move_to(self, target_x, target_y):
         """
         设置单位的移动目标位置
@@ -25,6 +36,14 @@ class Unit:
         self.is_moving = True
         self.target_x = target_x
         self.target_y = target_y
+        
+        # 计算移动方向
+        dx = target_x - self.x
+        dy = target_y - self.y
+        if dx != 0 or dy != 0:
+            angle = math.atan2(dy, dx)
+            # 将角度转换为8个方向之一 (0-7)
+            self.direction = int(((angle + 9 / 8 * math.pi) / (2 * math.pi)) * 8) % 8
 
     def update_position(self):
         """
@@ -56,7 +75,8 @@ class Unit:
             'target_x': self.target_x,
             'target_y': self.target_y,
             'health': self.health,
-            'speed': self.speed
+            'speed': self.speed,
+            'direction': self.direction
         }
 
     @classmethod
@@ -64,7 +84,7 @@ class Unit:
         """
         从字典数据创建单位对象
         """
-        return cls(
+        unit = cls(
             unit_id=data['id'],
             player_id=data['player_id'],
             unit_type=data['type'],
@@ -75,6 +95,8 @@ class Unit:
             health=data.get('health', 100),
             speed=data.get('speed', 2.0)
         )
+        unit.direction = data.get('direction', 0)
+        return unit
 
     def update_grid_position(self):
         """
@@ -82,3 +104,18 @@ class Unit:
         """
         self.grid_x = int(self.x // 20)
         self.grid_y = int(self.y // 20)
+
+    def direction_to_index(self, direction):
+        """
+        将方向转换为索引
+        0 -> 4
+        1 -> 3
+        2 -> 2
+        3 -> 1
+        4 -> 0
+        5 -> 7
+        6 -> 6
+        7 -> 5
+        """
+        return (direction + 4) % 8
+       

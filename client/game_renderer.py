@@ -1,6 +1,7 @@
 import pygame
 import time
 import os
+import math
 
 
 class GameRenderer:
@@ -15,6 +16,7 @@ class GameRenderer:
         # 加载房间背景图片
         self.room_background = None
         self.lobby_background = None
+        self.tank_sprites = None  # 坦克精灵表
         try:
             # 加载大厅背景图片
             lobby_background_path = os.path.join("resources", "loading.jpg")
@@ -31,8 +33,16 @@ class GameRenderer:
                 print(f"成功加载房间背景图片: {background_path}")
             else:
                 print(f"房间背景图片不存在: {background_path}")
+                
+            # 加载坦克精灵表
+            tank_sprites_path = os.path.join("resources", "units", "tanks.png")
+            if os.path.exists(tank_sprites_path):
+                self.tank_sprites = pygame.image.load(tank_sprites_path).convert_alpha()
+                print(f"成功加载坦克精灵表: {tank_sprites_path}")
+            else:
+                print(f"坦克精灵表不存在: {tank_sprites_path}")
         except Exception as e:
-            print(f"加载背景图片失败: {e}")
+            print(f"加载图片失败: {e}")
         
         # 改进字体初始化，增加错误处理和备选方案
         try:
@@ -283,11 +293,41 @@ class GameRenderer:
         if unit_type == 'miner':
             pygame.draw.circle(self.screen, player_color, (x, y), 10)
         elif unit_type == 'tank':
-            pygame.draw.polygon(self.screen, player_color, [
-                (x, y-12),
-                (x-10, y+8),
-                (x+10, y+8)
-            ])
+            # 使用坦克精灵表绘制
+            if self.tank_sprites:
+                # 计算方向向量
+                direction = 0
+                if hasattr(unit, 'direction'):
+                    direction = unit.direction
+                elif hasattr(unit, 'target_x') and hasattr(unit, 'target_y'):
+                    # 根据移动方向计算朝向
+                    dx = unit.target_x - unit.x
+                    dy = unit.target_y - unit.y
+                    if dx != 0 or dy != 0:
+                        angle = math.atan2(dy, dx)
+                        # 将角度转换为8个方向之一 (0-7)
+                        direction = int(((angle + 9 / 8 * math.pi) / (2 * math.pi)) * 8) % 8
+                
+                # 从精灵表中裁剪对应方向的图片 (每张图128x128)
+                # sprite_x = (direction % 8) * 128
+                # 方向转图片位置
+                index = unit.direction_to_index(direction)
+                sprite_x = 0
+                sprite_y = index * 128
+                print(f"direction: {direction}, sprite_y: {sprite_y}")
+                sprite_rect = pygame.Rect(sprite_x, sprite_y, 128, 128)
+                sprite = self.tank_sprites.subsurface(sprite_rect)
+                
+                # 缩放到合适的尺寸 (20x20)
+                scaled_sprite = pygame.transform.scale(sprite, (80, 80))
+                self.screen.blit(scaled_sprite, (x - 40, y - 40))
+            else:
+                # 如果没有加载精灵表，回退到原来的绘制方法
+                pygame.draw.polygon(self.screen, player_color, [
+                    (x, y-12),
+                    (x-10, y+8),
+                    (x+10, y+8)
+                ])
         else:
             pygame.draw.circle(self.screen, player_color, (x, y), 8)
         
