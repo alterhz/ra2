@@ -313,8 +313,19 @@ class FrameSyncClient:
         # 为每个玩家创建初始单位和建筑
         for player_id, player_info in players.items():
             # 根据玩家ID确定基地位置
-            base_x = 100 if int(player_id) == 1 else 500
-            base_y = 500
+            if 1 == int(player_id):
+                base_x = 96 - 16
+                base_y = 640 - 16
+            elif 2 == int(player_id):
+                base_x = 640 - 16
+                base_y = 640 - 16
+            elif 3 == int(player_id):
+                base_x = 512 - 16
+                base_y = 96 - 16
+            else:
+                base_x = 512 - 16
+                base_y = 960 - 16
+
             
             # 创建初始单位
             for i in range(5):
@@ -323,7 +334,7 @@ class FrameSyncClient:
                     unit_id=unit_id,
                     player_id=int(player_id),
                     unit_type='infantry',
-                    x=base_x + i * 40,
+                    x=base_x + i * 32,
                     y=base_y
                 )
                 # 绑定单位到网格
@@ -337,7 +348,7 @@ class FrameSyncClient:
                 'player_id': int(player_id),
                 'type': 'base',
                 'x': base_x,
-                'y': base_y - 100,
+                'y': base_y - 96,
                 'health': 1000
             }
     
@@ -453,7 +464,7 @@ class FrameSyncClient:
                         unit_id=unit_id,
                         player_id=player_id,
                         unit_type=unit_type,
-                        x=building['x'] + 50,
+                        x=building['x'] + 64,
                         y=building['y']
                     )
                     # 绑定单位到网格
