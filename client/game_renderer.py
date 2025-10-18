@@ -265,7 +265,7 @@ class GameRenderer:
             print(f"绘制等待房间界面时出错: {e}")
     
     def draw_terrain(self):
-        tile_size = 64
+        tile_size = 32
         for x in range(0, self.window_width, tile_size):
             for y in range(0, self.window_height, tile_size):
                 color = self.colors['terrain1'] if (x//tile_size + y//tile_size) % 2 == 0 else self.colors['terrain2']
@@ -292,7 +292,7 @@ class GameRenderer:
         # 绘制单位形状
         if unit_type == 'miner':
             pygame.draw.circle(self.screen, player_color, (x, y), 10)
-        elif unit_type == 'tank':
+        elif unit_type == 'tank' or unit_type == 'infantry':
             # 使用坦克精灵表绘制
             if self.tank_sprites:
                 # 计算方向向量

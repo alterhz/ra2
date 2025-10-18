@@ -88,7 +88,7 @@ class InputHandler:
             return
         
         # x, y 都要是20的整数倍
-        fixed_pos = (pos[0] // 20 * 20 + 10, pos[1] // 20 * 20 + 10)
+        fixed_pos = (pos[0] // 32 * 32 + 16, pos[1] // 32 * 32 + 16)
         
         input_data = {
             'type': 'move_units',
@@ -118,7 +118,7 @@ class InputHandler:
         self.client.selected_units.clear()
         
         # 查找点击位置附近的单位（在一定半径内）
-        click_radius = 20
+        click_radius = 32
         closest_unit = None
         closest_distance = float('inf')
         

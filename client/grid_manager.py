@@ -1,7 +1,7 @@
 class GridManager:
     """
     网格管理器，用于处理单位在网格中的位置，防止单位重叠
-    每个20x20像素的格子只能存在一个单位
+    每个32x32像素的格子只能存在一个单位
     """
     
     def __init__(self, width=100, height=100):
@@ -16,8 +16,8 @@ class GridManager:
         """
         获取坐标对应的网格位置
         """
-        grid_x = int(x // 20)
-        grid_y = int(y // 20)
+        grid_x = int(x // 32)
+        grid_y = int(y // 32)
         return grid_x, grid_y
 
     def is_position_valid(self, grid_x, grid_y):
@@ -57,8 +57,8 @@ class GridManager:
             old_grid_x = unit.grid_x
             old_grid_y = unit.grid_y
             # 更新单位的实际坐标
-            to_x = new_grid_x * 20 + 10  # 格子中心
-            to_y = new_grid_y * 20 + 10
+            to_x = new_grid_x * 32 + 16  # 格子中心
+            to_y = new_grid_y * 32 + 16
             
             if teleport:
                 # 瞬移模式：直接设置单位位置

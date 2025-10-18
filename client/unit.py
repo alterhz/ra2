@@ -13,8 +13,8 @@ class Unit:
         self.health = health
         self.speed = speed
         # 添加格子坐标属性
-        self.grid_x = int(x // 20)
-        self.grid_y = int(y // 20)
+        self.grid_x = int(x // 32)
+        self.grid_y = int(y // 32)
         self.is_moving = False
         """
         添加方向属性，0-7表示8个方向，
@@ -102,8 +102,8 @@ class Unit:
         """
         更新单位所在的格子位置
         """
-        self.grid_x = int(self.x // 20)
-        self.grid_y = int(self.y // 20)
+        self.grid_x = int(self.x // 32)
+        self.grid_y = int(self.y // 32)
 
     def direction_to_index(self, direction):
         """
