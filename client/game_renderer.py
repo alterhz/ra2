@@ -317,9 +317,32 @@ class GameRenderer:
                 sprite_rect = pygame.Rect(sprite_x, sprite_y, 128, 128)
                 sprite = self.tank_sprites.subsurface(sprite_rect)
                 
-                # 缩放到合适的尺寸 (20x20)
+                # 缩放到合适的尺寸 (80x80)
                 scaled_sprite = pygame.transform.scale(sprite, (80, 80))
-                self.screen.blit(scaled_sprite, (x - 40, y - 40))
+                
+                # 根据玩家ID应用不同的效果
+                if unit.id in self.client.selected_units:
+                    # 选中单位应用红色效果
+                    effect_sprite = self.apply_red_effect(scaled_sprite)
+                    self.screen.blit(effect_sprite, (x - 40, y - 40))
+                elif str(player_id) == "1":
+                    # 玩家1应用蓝色效果
+                    effect_sprite = self.apply_blue_effect(scaled_sprite)
+                    self.screen.blit(effect_sprite, (x - 40, y - 40))
+                elif str(player_id) == "2":
+                    # 玩家2应用绿色效果
+                    effect_sprite = self.apply_green_effect(scaled_sprite)
+                    self.screen.blit(effect_sprite, (x - 40, y - 40))
+                elif str(player_id) == "3":
+                    # 玩家3应用黄色效果
+                    effect_sprite = self.apply_yellow_effect(scaled_sprite)
+                    self.screen.blit(effect_sprite, (x - 40, y - 40))
+                elif str(player_id) == "4":
+                    # 玩家4应用紫色效果
+                    effect_sprite = self.apply_purple_effect(scaled_sprite)
+                    self.screen.blit(effect_sprite, (x - 40, y - 40))
+                else:
+                    self.screen.blit(scaled_sprite, (x - 40, y - 40))
             else:
                 # 如果没有加载精灵表，回退到原来的绘制方法
                 pygame.draw.polygon(self.screen, player_color, [
@@ -345,6 +368,133 @@ class GameRenderer:
         if unit_id in self.client.selected_units:
             pygame.draw.circle(self.screen, self.colors['selected'], (x, y), 15, 2)
     
+    def apply_red_effect(self, surface):
+        """
+        给表面添加红色效果
+        :param surface: 原始图像表面
+        :return: 添加了红色效果的新表面
+        """
+        # 创建一个新的表面，保留原始图像的alpha通道
+        red_surface = surface.copy()
+        
+        # 获取表面的所有像素
+        pixels = pygame.surfarray.pixels3d(red_surface)
+        
+        # 增加红色分量，减少蓝色和绿色通道
+        pixels[:, :, 0] = pygame.surfarray.pixels3d(surface)[:, :, 0] * 1.5  # 增强红色
+        pixels[:, :, 1] = pygame.surfarray.pixels3d(surface)[:, :, 1] * 0.7  # 减少绿色
+        pixels[:, :, 2] = pygame.surfarray.pixels3d(surface)[:, :, 2] * 0.7  # 减少蓝色
+        
+        # 确保像素值不超过255
+        pixels[:, :, 0] = pygame.surfarray.pixels3d(red_surface)[:, :, 0].clip(0, 255)
+        
+        # 释放像素数组锁
+        del pixels
+        
+        return red_surface
+
+    def apply_blue_effect(self, surface):
+        """
+        给表面添加蓝色效果
+        :param surface: 原始图像表面
+        :return: 添加了蓝色效果的新表面
+        """
+        # 创建一个新的表面，保留原始图像的alpha通道
+        blue_surface = surface.copy()
+        
+        # 获取表面的所有像素
+        pixels = pygame.surfarray.pixels3d(blue_surface)
+        
+        # 增加蓝色分量，减少红色和绿色通道
+        pixels[:, :, 0] = pygame.surfarray.pixels3d(surface)[:, :, 0] * 0.7  # 减少红色
+        pixels[:, :, 1] = pygame.surfarray.pixels3d(surface)[:, :, 1] * 0.7  # 减少绿色
+        pixels[:, :, 2] = pygame.surfarray.pixels3d(surface)[:, :, 2] * 1.5  # 增强蓝色
+        
+        # 确保像素值不超过255
+        pixels[:, :, 2] = pygame.surfarray.pixels3d(blue_surface)[:, :, 2].clip(0, 255)
+        
+        # 释放像素数组锁
+        del pixels
+        
+        return blue_surface
+
+    def apply_green_effect(self, surface):
+        """
+        给表面添加绿色效果
+        :param surface: 原始图像表面
+        :return: 添加了绿色效果的新表面
+        """
+        # 创建一个新的表面，保留原始图像的alpha通道
+        green_surface = surface.copy()
+        
+        # 获取表面的所有像素
+        pixels = pygame.surfarray.pixels3d(green_surface)
+        
+        # 增加绿色分量，减少红色和蓝色通道
+        pixels[:, :, 0] = pygame.surfarray.pixels3d(surface)[:, :, 0] * 0.7  # 减少红色
+        pixels[:, :, 1] = pygame.surfarray.pixels3d(surface)[:, :, 1] * 1.5  # 增强绿色
+        pixels[:, :, 2] = pygame.surfarray.pixels3d(surface)[:, :, 2] * 0.7  # 减少蓝色
+        
+        # 确保像素值不超过255
+        pixels[:, :, 1] = pygame.surfarray.pixels3d(green_surface)[:, :, 1].clip(0, 255)
+        
+        # 释放像素数组锁
+        del pixels
+        
+        return green_surface
+
+    def apply_yellow_effect(self, surface):
+        """
+        给表面添加黄色效果
+        :param surface: 原始图像表面
+        :return: 添加了黄色效果的新表面
+        """
+        # 创建一个新的表面，保留原始图像的alpha通道
+        yellow_surface = surface.copy()
+        
+        # 获取表面的所有像素
+        pixels = pygame.surfarray.pixels3d(yellow_surface)
+        
+        # 增加红色和绿色分量，减少蓝色通道
+        pixels[:, :, 0] = pygame.surfarray.pixels3d(surface)[:, :, 0] * 1.3  # 增强红色
+        pixels[:, :, 1] = pygame.surfarray.pixels3d(surface)[:, :, 1] * 1.3  # 增强绿色
+        pixels[:, :, 2] = pygame.surfarray.pixels3d(surface)[:, :, 2] * 0.5  # 减少蓝色
+        
+        # 确保像素值不超过255
+        pixels[:, :, 0] = pygame.surfarray.pixels3d(yellow_surface)[:, :, 0].clip(0, 255)
+        pixels[:, :, 1] = pygame.surfarray.pixels3d(yellow_surface)[:, :, 1].clip(0, 255)
+        
+        # 释放像素数组锁
+        del pixels
+        
+        return yellow_surface
+
+    def apply_purple_effect(self, surface):
+        """
+        给表面添加紫色效果
+        :param surface: 原始图像表面
+        :return: 添加了紫色效果的新表面
+        """
+        # 创建一个新的表面，保留原始图像的alpha通道
+        purple_surface = surface.copy()
+        
+        # 获取表面的所有像素
+        pixels = pygame.surfarray.pixels3d(purple_surface)
+        
+        # 增加红色和蓝色分量，减少绿色通道
+        pixels[:, :, 0] = pygame.surfarray.pixels3d(surface)[:, :, 0] * 1.3  # 增强红色
+        pixels[:, :, 1] = pygame.surfarray.pixels3d(surface)[:, :, 1] * 0.5  # 减少绿色
+        pixels[:, :, 2] = pygame.surfarray.pixels3d(surface)[:, :, 2] * 1.3  # 增强蓝色
+        
+        # 确保像素值不超过255
+        pixels[:, :, 0] = pygame.surfarray.pixels3d(purple_surface)[:, :, 0].clip(0, 255)
+        pixels[:, :, 2] = pygame.surfarray.pixels3d(purple_surface)[:, :, 2].clip(0, 255)
+        
+        # 释放像素数组锁
+        del pixels
+        
+        return purple_surface
+
     def draw_building(self, building):
         player_color_key = f'player{building["player_id"]}'
         player_color = self.colors.get(player_color_key, (128, 128, 128))  # 默认灰色

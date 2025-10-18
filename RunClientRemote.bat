@@ -1,0 +1,1 @@
+.venv\Scripts\python.exe test_client_remote.py
