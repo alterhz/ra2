@@ -6,6 +6,7 @@ from typing import Optional, TYPE_CHECKING
 from .reliable_udp import ReliableUDP
 from .unit import Unit
 from .grid_manager import GridManager
+from .bullet import Bullet
 
 if TYPE_CHECKING:
     from .input_handler import InputHandler
@@ -85,6 +86,11 @@ class FrameSyncClient:
         # 房间列表更新
         self.last_room_list_update = 0  # 上次获取房间列表的时间
         self.room_list_update_interval = 3.0  # 每3秒获取一次房间列表
+        
+        # 子弹管理
+        self.bullets = {}  # 存储所有活动的子弹
+        self.last_bullet_time = 0  # 上次发射子弹的时间
+        self.bullet_interval = 1.0  # 每秒发射一颗子弹
         
         print("帧同步客户端初始化完成")
         
@@ -309,6 +315,7 @@ class FrameSyncClient:
         # 清空现有的单位和建筑
         self.game_state['units'].clear()
         self.game_state['buildings'].clear()
+        self.bullets.clear()  # 同时清空子弹
         
         # 为每个玩家创建初始单位和建筑
         for player_id, player_info in players.items():
@@ -472,6 +479,12 @@ class FrameSyncClient:
                     self.game_state['units'][unit_id] = unit
                     print(f"生产单位: {unit_id}, 类型: {unit_type}")
     
+    def adjust_bullet_position(self, x: float, y: float):
+        """调整子弹位置到格子中心点"""
+        x = x // 32 * 32 + 16
+        y = y // 32 * 32 + 16
+        return x, y
+
     def update_game_state(self):
         """更新游戏状态"""
         # 更新单位位置
@@ -483,7 +496,44 @@ class FrameSyncClient:
             if not unit.is_moving and (old_x != unit.x or old_y != unit.y):
                 # 单位停止移动，绑定到网格
                 self.grid_manager.bind_unit_to_grid(unit)
-    
+        
+        # 更新子弹状态
+        current_time = time.time()
+        # 检查是否有选中的单位且距离上次发射子弹已经过了指定间隔
+        if (self.selected_units and 
+            current_time - self.last_bullet_time >= self.bullet_interval):
+            # 获取鼠标位置
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            # 调整子弹在格子中心点
+            mouse_x, mouse_y = self.adjust_bullet_position(mouse_x, mouse_y)
+            # 从选中的单位中选择一个发射子弹
+            shooter_unit = self.game_state['units'][self.selected_units[0]]
+            # 创建子弹ID
+            bullet_id = f"bullet_{int(current_time * 1000)}"
+            # 创建子弹对象
+            bullet = Bullet(bullet_id, shooter_unit.x, shooter_unit.y, mouse_x, mouse_y)
+            # 添加到子弹列表
+            self.bullets[bullet_id] = bullet
+            # 更新上次发射子弹时间
+            self.last_bullet_time = current_time
+            # TODO调整unit朝向子弹方向
+            direction = shooter_unit.cal_direction(shooter_unit.x, shooter_unit.y, mouse_x, mouse_y)
+            shooter_unit.direction = direction
+
+        
+        # 更新所有子弹
+        bullets_to_remove = []
+        for bullet_id, bullet in self.bullets.items():
+            bullet.update()
+            if not bullet.is_active:
+                bullets_to_remove.append(bullet_id)
+        
+        # 移除不活动的子弹
+        for bullet_id in bullets_to_remove:
+            if bullet_id in self.bullets:
+                del self.bullets[bullet_id]
+
+
     def run_frame(self):
         """运行客户端帧逻辑"""
         current_time = time.time()

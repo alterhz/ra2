@@ -37,13 +37,9 @@ class Unit:
         self.target_x = target_x
         self.target_y = target_y
         
-        # 计算移动方向
-        dx = target_x - self.x
-        dy = target_y - self.y
-        if dx != 0 or dy != 0:
-            angle = math.atan2(dy, dx)
-            # 将角度转换为8个方向之一 (0-7)
-            self.direction = int(((angle + 9 / 8 * math.pi) / (2 * math.pi)) * 8) % 8
+        # 计算移动方向, 将角度转换为8个方向之一 (0-7)
+        self.direction = self.cal_direction(self.x, self.y, target_x, target_y)
+            
 
     def update_position(self):
         """
@@ -105,7 +101,7 @@ class Unit:
         self.grid_x = int(self.x // 32)
         self.grid_y = int(self.y // 32)
 
-    def direction_to_index(self, direction):
+    def direction_to_sprite_index(self, direction):
         """
         将方向转换为索引
         0 -> 4
@@ -118,4 +114,13 @@ class Unit:
         7 -> 5
         """
         return (direction + 4) % 8
-       
+    
+    def cal_direction(self, x, y, target_x, target_y):
+        """
+        计算两点之间的方向
+        """
+        dx = target_x - x
+        dy = target_y - y
+        angle = math.atan2(dy, dx)
+        direction = int(((angle + 9 / 8 * math.pi) / (2 * math.pi)) * 8) % 8
+        return direction

@@ -3,6 +3,7 @@ import time
 import os
 import math
 import numpy as np
+from .bullet import Bullet
 
 
 class GameRenderer:
@@ -138,6 +139,9 @@ class GameRenderer:
             # 绘制单位
             for unit in self.client.game_state['units'].values():
                 self.draw_unit(unit)
+            # 绘制子弹
+            for bullet in self.client.bullets.values():
+                bullet.draw(self.screen)
             self.draw_ui(self.client.input_handler if hasattr(self.client, 'input_handler') else None)
         else:
             # 在房间中但游戏未开始
@@ -301,18 +305,12 @@ class GameRenderer:
                 if hasattr(unit, 'direction'):
                     direction = unit.direction
                 elif hasattr(unit, 'target_x') and hasattr(unit, 'target_y'):
-                    # 根据移动方向计算朝向
-                    dx = unit.target_x - unit.x
-                    dy = unit.target_y - unit.y
-                    if dx != 0 or dy != 0:
-                        angle = math.atan2(dy, dx)
-                        # 将角度转换为8个方向之一 (0-7)
-                        direction = int(((angle + 9 / 8 * math.pi) / (2 * math.pi)) * 8) % 8
+                    direction = unit.cal_direction(unit.x, unit.y, unit.target_x, unit.target_y)
                 
                 # 从精灵表中裁剪对应方向的图片 (每张图128x128)
                 # sprite_x = (direction % 8) * 128
                 # 方向转图片位置
-                index = unit.direction_to_index(direction)
+                index = unit.direction_to_sprite_index(direction)
                 sprite_x = 0
                 sprite_y = index * 128
                 sprite_rect = pygame.Rect(sprite_x, sprite_y, 128, 128)
