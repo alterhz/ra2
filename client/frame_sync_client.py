@@ -320,11 +320,11 @@ class FrameSyncClient:
                 base_x = 640 - 16
                 base_y = 640 - 16
             elif 3 == int(player_id):
-                base_x = 512 - 16
-                base_y = 96 - 16
+                base_x = 96 - 16
+                base_y = 192 - 16
             else:
-                base_x = 512 - 16
-                base_y = 960 - 16
+                base_x = 640 - 16
+                base_y = 192 - 16
 
             
             # 创建初始单位
