@@ -23,11 +23,11 @@ class Bullet:
         # 计算移动方向
         dx = target_x - start_x
         dy = target_y - start_y
-        distance = max(math.sqrt(dx * dx + dy * dy), 0.001)  # 防止除零
+        distance = max(int(math.sqrt(dx * dx + dy * dy)), 1)  # 防止除零，使用整数运算
         
-        # 单位向量
-        self.dx = dx / distance
-        self.dy = dy / distance
+        # 单位向量（使用定点数运算，放大1000倍避免浮点数精度问题）
+        self.dx = int((dx * 1000) / distance) if distance > 0 else 0
+        self.dy = int((dy * 1000) / distance) if distance > 0 else 0
         
         # 加载爆炸效果精灵表
         self.explosion_sprites = None
@@ -54,9 +54,9 @@ class Bullet:
         if not self.is_exploding:
             # 飞行状态
             # 计算到目标点的距离
-            dx = self.target_x - self.x
-            dy = self.target_y - self.y
-            distance = math.sqrt(dx * dx + dy * dy)
+            dx = self.target_x - int(self.x)
+            dy = self.target_y - int(self.y)
+            distance = int(math.sqrt(dx * dx + dy * dy))
             
             # 如果接近目标点，开始爆炸
             if distance <= self.speed:
@@ -64,9 +64,9 @@ class Bullet:
                 self.y = self.target_y
                 self.is_exploding = True
             else:
-                # 继续飞行
-                self.x += self.dx * self.speed
-                self.y += self.dy * self.speed
+                # 继续飞行（使用定点数运算，然后转换回浮点数用于显示）
+                self.x += (self.dx * self.speed) / 1000.0
+                self.y += (self.dy * self.speed) / 1000.0
         else:
             # 爆炸状态
             # 在第一帧爆炸时检测并造成伤害
@@ -87,9 +87,9 @@ class Bullet:
         # 检查范围内的所有单位
         for unit_id, unit in game_state['units'].items():
             # 计算单位与爆炸点的距离
-            dx = unit.x - self.x
-            dy = unit.y - self.y
-            distance = math.sqrt(dx * dx + dy * dy)
+            dx = unit.x - int(self.x)
+            dy = unit.y - int(self.y)
+            distance = int(math.sqrt(dx * dx + dy * dy))
             
             # 如果在32像素范围内，则造成伤害
             if distance <= 30:
@@ -115,7 +115,7 @@ class Bullet:
                 sprite_rect = pygame.Rect(0, 0, 128, 96)  # 第一帧 (1024*192, 2行8列)
                 sprite = self.explosion_sprites.subsurface(sprite_rect)
                 scaled_sprite = pygame.transform.scale(sprite, (20, 20))
-                screen.blit(scaled_sprite, (self.x - 10, self.y - 10))
+                screen.blit(scaled_sprite, (int(self.x) - 10, int(self.y) - 10))
             else:
                 # 回退到简单圆形
                 pygame.draw.circle(screen, (255, 255, 0), (int(self.x), int(self.y)), 5)
@@ -142,7 +142,7 @@ class Bullet:
                     try:
                         sprite = self.explosion_sprites.subsurface(sprite_rect)
                         scaled_sprite = pygame.transform.scale(sprite, (60, 60))
-                        screen.blit(scaled_sprite, (self.x - 30, self.y - 30))
+                        screen.blit(scaled_sprite, (int(self.x) - 30, int(self.y) - 30))
                     except ValueError:
                         # 如果裁剪出错，绘制简单圆形
                         pygame.draw.circle(screen, (255, 100, 0), (int(self.x), int(self.y)), 15)
@@ -155,8 +155,8 @@ class Bullet:
         """将子弹对象转换为字典格式，用于网络传输和存储"""
         return {
             'id': self.id,
-            'x': self.x,
-            'y': self.y,
+            'x': int(self.x),  # 网络传输时使用整数
+            'y': int(self.y),  # 网络传输时使用整数
             'start_x': self.start_x,
             'start_y': self.start_y,
             'target_x': self.target_x,
@@ -178,8 +178,8 @@ class Bullet:
             target_y=data['target_y'],
             speed=data.get('speed', 5.0)
         )
-        bullet.x = data['x']
-        bullet.y = data['y']
+        bullet.x = data['x']  # 从网络接收时转换为浮点数
+        bullet.y = data['y']  # 从网络接收时转换为浮点数
         bullet.is_active = data.get('is_active', True)
         bullet.is_exploding = data.get('is_exploding', False)
         bullet.explosion_frame = data.get('explosion_frame', 0)

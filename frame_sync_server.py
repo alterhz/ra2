@@ -15,8 +15,9 @@ class GameRoom:
         self.history_frames = {}  # {frame: {player_id: inputs}} 已发送的帧及其输入
         
         # 游戏配置
-        self.frame_interval = 1.0 / 20  # 20 FPS
-        self.last_frame_time = time.time()
+        # 使用定点数表示帧间隔，实际间隔 = frame_interval / 1000 秒
+        self.frame_interval = 50  # 20 FPS（毫秒）
+        self.last_frame_time = self.get_time_ms()
         self.game_started = False
         
         # 房间属性
@@ -37,6 +38,10 @@ class GameRoom:
             }
         return players_info
 
+    def get_time_ms(self):
+        """获取当前时间（毫秒）"""
+        return int(time.time() * 1000)
+
 class FrameSyncServer:
     def __init__(self, host='127.0.0.1', port=8888):
         self.udp = ReliableUDP(host, port, is_server=True)
@@ -48,7 +53,8 @@ class FrameSyncServer:
         self.player_rooms = {}  # {addr: room_id} 记录每个玩家所在的房间
         
         # 全局配置
-        self.input_ack_timeout = 0.2  # 200ms
+        # 使用定点数表示输入确认超时，实际超时 = input_ack_timeout / 1000 秒
+        self.input_ack_timeout = 200  # 200ms（毫秒）
         
         print("帧同步服务器启动完成")
     
@@ -79,7 +85,7 @@ class FrameSyncServer:
     def _handle_create_room(self, addr: tuple, data: dict):
         """处理创建房间请求"""
         # 创建新的房间ID
-        room_id = f"room_{int(time.time() * 1000)}"
+        room_id = f"room_{self.get_time_ms()}"
         
         # 创建新房间
         room = GameRoom(room_id)
@@ -263,6 +269,10 @@ class FrameSyncServer:
         # 广播玩家列表给房间内所有玩家
         self._broadcast_player_list(room)
 
+    def get_time_ms(self):
+        """获取当前时间（毫秒）"""
+        return int(time.time() * 1000)
+    
     def _handle_player_input(self, addr: tuple, data: dict):
         """处理玩家输入"""
         # 检查玩家是否已连接
@@ -357,11 +367,11 @@ class FrameSyncServer:
                 room.current_frame = 0
                 room.frame_inputs.clear()
                 # 记录房间变空的时间
-                room.empty_since = time.time()
+                room.empty_since = self.get_time_ms()
                 print(f"房间 {room_id} 内所有玩家断开连接，房间重置")
             # 如果房间未开始游戏且所有玩家都离开了，也记录房间变空时间
             elif not room.game_started and len(room.players) == 0:
-                room.empty_since = time.time()
+                room.empty_since = self.get_time_ms()
                 print(f"房间 {room_id} 内所有玩家离开，记录房间变空时间")
             
             # 广播玩家列表给房间内剩余的玩家
@@ -486,10 +496,11 @@ class FrameSyncServer:
     
     def run_frame(self):
         """运行所有房间的一帧"""
+        current_time = self.get_time_ms()
         for room_id, room in list(self.rooms.items()):
             # 检查是否需要销毁房间（房间为空且超过1分钟）
             if len(room.players) == 0 and room.empty_since is not None:
-                if time.time() - room.empty_since >= 1:  # 60秒 = 1分钟
+                if current_time - room.empty_since >= 1000:  # 1000毫秒 = 1秒
                     print(f"房间 {room_id} 已空置超过1秒，自动销毁")
                     del self.rooms[room_id]
                     continue  # 跳过此房间的后续处理
@@ -497,11 +508,10 @@ class FrameSyncServer:
             if not room.game_started:
                 continue
             
-            current_time = time.time()
             if current_time - room.last_frame_time < room.frame_interval:
                 continue
             
-            room.last_frame_time += room.frame_interval
+            room.last_frame_time = current_time
             
             # 按顺序处理延迟帧：current_frame-3, current_frame-2, current_frame-1
             for offset in [3, 2, 1]:

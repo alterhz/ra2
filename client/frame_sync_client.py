@@ -1,6 +1,6 @@
+import time
 import pygame
 import sys
-import time
 import math
 from typing import Optional, TYPE_CHECKING
 from .reliable_udp import ReliableUDP
@@ -60,12 +60,14 @@ class FrameSyncClient:
         self.ping = 0  # ping值（毫秒）
         self.last_ping_time = 0
         self.ping_sent_time = 0
-        self.ping_interval = 10.0  # 每10秒发送一次ping
+        # 使用定点数表示ping间隔，实际间隔 = ping_interval / 1000 秒
+        self.ping_interval = 10000  # 每10秒发送一次ping（毫秒）
         
         # 重连相关
         self.reconnect_attempts = 0
         self.max_reconnect_attempts = 5
-        self.reconnect_delay = 2.0  # 重连间隔（秒）
+        # 使用定点数表示重连延迟，实际延迟 = reconnect_delay / 1000 秒
+        self.reconnect_delay = 2000  # 重连间隔（毫秒）
         self.last_reconnect_time = 0
         self.is_reconnecting = False
         
@@ -74,23 +76,27 @@ class FrameSyncClient:
         self.selected_units = []
         
         # 帧率控制
-        self.frame_interval = 1.0 / 20  # 20 FPS
-        self.last_frame_time = time.time()
+        # 使用定点数表示帧间隔，实际间隔 = frame_interval / 1000 秒
+        self.frame_interval = 50  # 20 FPS（毫秒）
+        self.last_frame_time = 0
         
         # 逻辑帧率计算
-        self.last_logic_frame_time = time.time()
+        self.last_logic_frame_time = 0
         self.logic_frame_count = 0
-        self.logic_fps = 0.0
-        self.logic_fps_update_interval = 1.0  # 每1秒更新一次逻辑帧率
+        self.logic_fps = 0
+        # 使用定点数表示逻辑帧率更新间隔，实际间隔 = logic_fps_update_interval / 1000 秒
+        self.logic_fps_update_interval = 1000  # 每1秒更新一次逻辑帧率（毫秒）
         
         # 房间列表更新
-        self.last_room_list_update = 0  # 上次获取房间列表的时间
-        self.room_list_update_interval = 3.0  # 每3秒获取一次房间列表
+        self.last_room_list_update = 0  # 上次获取房间列表的时间（毫秒）
+        # 使用定点数表示房间列表更新间隔，实际间隔 = room_list_update_interval / 1000 秒
+        self.room_list_update_interval = 3000  # 每3秒获取一次房间列表（毫秒）
         
         # 子弹管理
         self.bullets = {}  # 存储所有活动的子弹
-        self.last_bullet_time = 0  # 上次发射子弹的时间
-        self.bullet_interval = 1.0  # 每秒发射一颗子弹
+        self.last_bullet_time = 0  # 上次发射子弹的时间（毫秒）
+        # 使用定点数表示子弹间隔，实际间隔 = bullet_interval / 1000 秒
+        self.bullet_interval = 1000  # 每秒发射一颗子弹（毫秒）
         
         print("帧同步客户端初始化完成")
         
@@ -121,7 +127,7 @@ class FrameSyncClient:
     
     def reconnect(self):
         """尝试重连"""
-        current_time = time.time()
+        current_time = self.get_time_ms()
         if self.is_reconnecting and (current_time - self.last_reconnect_time) >= self.reconnect_delay:
             if self.reconnect_attempts < self.max_reconnect_attempts:
                 print(f"尝试重连 ({self.reconnect_attempts + 1}/{self.max_reconnect_attempts})")
@@ -149,7 +155,7 @@ class FrameSyncClient:
         self.connected = False
         self.is_reconnecting = True
         self.reconnect_attempts = 0
-        self.last_reconnect_time = time.time() - self.reconnect_delay  # 立即尝试重连
+        self.last_reconnect_time = self.get_time_ms() - self.reconnect_delay  # 立即尝试重连
     
     def _handle_disconnect(self, addr):
         """处理断开连接"""
@@ -160,7 +166,7 @@ class FrameSyncClient:
             self.connected = False
             self.is_reconnecting = True
             self.reconnect_attempts = 0
-            self.last_reconnect_time = time.time() - self.reconnect_delay  # 立即尝试第一次重连
+            self.last_reconnect_time = self.get_time_ms() - self.reconnect_delay  # 立即尝试第一次重连
     
     def create_room(self, player_name="Player"):
         """创建房间"""
@@ -230,7 +236,7 @@ class FrameSyncClient:
         
         # 如果正在重连，则继续重连流程
         if self.is_reconnecting:
-            current_time = time.time()
+            current_time = self.get_time_ms()
             if (current_time - self.last_reconnect_time) >= self.reconnect_delay:
                 if self.reconnect_attempts < self.max_reconnect_attempts:
                     print(f"重连尝试 {self.reconnect_attempts + 1}/{self.max_reconnect_attempts}")
@@ -480,7 +486,7 @@ class FrameSyncClient:
                     self.game_state['units'][unit_id] = unit
                     print(f"生产单位: {unit_id}, 类型: {unit_type}")
     
-    def adjust_bullet_position(self, x: float, y: float):
+    def adjust_bullet_position(self, x: int, y: int):
         """调整子弹位置到格子中心点"""
         x = x // 32 * 32 + 16
         y = y // 32 * 32 + 16
@@ -514,7 +520,7 @@ class FrameSyncClient:
                     self.selected_units.remove(unit_id)
         
         # 处理单位自动攻击
-        current_time = time.time()
+        current_time = self.get_time_ms()
         for unit_id, unit in self.game_state['units'].items():
             # 检查是否是坦克类型单位且血量大于0
             if unit.type == 'tank' and unit.health > 0:
@@ -524,7 +530,7 @@ class FrameSyncClient:
                     target_unit = self.find_nearest_enemy_unit(unit, unit.attack_range)
                     if target_unit:
                         # 创建子弹攻击目标单位
-                        bullet_id = f"bullet_{int(current_time * 1000)}_{unit_id}"
+                        bullet_id = f"bullet_{current_time}_{unit_id}"
                         # 子弹从当前单位位置发射，目标是敌方单位位置
                         bullet = Bullet(bullet_id, unit.x, unit.y, target_unit.x, target_unit.y, unit.player_id)
                         # 添加到子弹列表
@@ -536,7 +542,7 @@ class FrameSyncClient:
                         unit.direction = direction
         
         # 更新子弹状态（玩家控制的单位发射子弹）
-        # current_time = time.time()
+        # current_time = self.get_time_ms()
         # # 检查是否有选中的单位且距离上次发射子弹已经过了指定间隔
         # if (self.selected_units and 
         #     current_time - self.last_bullet_time >= self.bullet_interval):
@@ -547,7 +553,7 @@ class FrameSyncClient:
         #     # 从选中的单位中选择一个发射子弹
         #     shooter_unit = self.game_state['units'][self.selected_units[0]]
         #     # 创建子弹ID
-        #     bullet_id = f"bullet_{int(current_time * 1000)}"
+        #     bullet_id = f"bullet_{current_time}"
         #     # 创建子弹对象
         #     bullet = Bullet(bullet_id, shooter_unit.x, shooter_unit.y, mouse_x, mouse_y, shooter_unit.player_id)
         #     # 添加到子弹列表
@@ -571,10 +577,13 @@ class FrameSyncClient:
             if bullet_id in self.bullets:
                 del self.bullets[bullet_id]
 
+    def get_time_ms(self):
+        """获取当前时间（毫秒）"""
+        return int(time.time() * 1000)
 
     def run_frame(self):
         """运行客户端帧逻辑"""
-        current_time = time.time()
+        current_time = self.get_time_ms()
         
         # 处理重连
         if self.is_reconnecting:
@@ -583,7 +592,7 @@ class FrameSyncClient:
         
         # 定期更新逻辑帧率
         if current_time - self.last_logic_frame_time >= self.logic_fps_update_interval:
-            self.logic_fps = self.logic_frame_count / (current_time - self.last_logic_frame_time)
+            self.logic_fps = (self.logic_frame_count * 1000) // max(1, current_time - self.last_logic_frame_time)
             self.logic_frame_count = 0
             self.last_logic_frame_time = current_time
         
@@ -657,7 +666,7 @@ class FrameSyncClient:
        
     def send_ping(self):
         """发送ping请求"""
-        current_time = time.time()
+        current_time = self.get_time_ms()
         if current_time - self.last_ping_time >= self.ping_interval and self.connected:
             ping_data = {
                 'type': 'ping',
@@ -673,9 +682,9 @@ class FrameSyncClient:
     
     def _handle_pong(self, data: dict):
         """处理pong响应"""
-        current_time = time.time()
+        current_time = self.get_time_ms()
         sent_time = data['timestamp']
-        self.ping = (current_time - sent_time) * 1000  # 转换为毫秒
+        self.ping = current_time - sent_time  # 保持为毫秒
         server_frame = data['server_frame']
         # print(f"Ping: {self.ping:.2f}ms, self.current_frame: {self.current_frame}, server_frame: {server_frame}")
         # self.current_frame = server_frame - 1
@@ -714,7 +723,7 @@ class FrameSyncClient:
         :return: 最近的敌方单位，如果没有则返回None
         """
         nearest_enemy = None
-        min_distance = float('inf')
+        min_distance = range_limit + 1  # 初始化为超出范围的值
         
         for target_unit_id, target_unit in self.game_state['units'].items():
             # 排除自己
@@ -732,11 +741,11 @@ class FrameSyncClient:
             # 计算距离
             dx = target_unit.x - unit.x
             dy = target_unit.y - unit.y
-            distance = math.sqrt(dx * dx + dy * dy)
+            distance_sq = dx * dx + dy * dy  # 使用距离的平方避免开方运算
             
             # 检查是否在范围内且比当前最近的单位更近
-            if distance <= range_limit and distance < min_distance:
-                min_distance = distance
+            if distance_sq <= range_limit * range_limit and distance_sq < min_distance * min_distance:
+                min_distance = int(math.sqrt(distance_sq))
                 nearest_enemy = target_unit
         
         return nearest_enemy
