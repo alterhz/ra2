@@ -284,19 +284,29 @@ class GameRenderer:
             unit_type = unit.type
             x, y = unit.x, unit.y
             health = unit.health
+            alpha = getattr(unit, 'alpha', 255)  # 获取透明度，如果不存在则默认为255
         else:
             # 字典格式（为了兼容性）
             player_id = unit["player_id"]
             unit_type = unit["type"]
             x, y = unit["x"], unit["y"]
             health = unit["health"]
+            alpha = 255  # 字典格式单位默认不透明
             
         player_color_key = f'player{player_id}'
         player_color = self.colors.get(player_color_key, (128, 128, 128))  # 默认灰色
         
         # 绘制单位形状
         if unit_type == 'miner':
-            pygame.draw.circle(self.screen, player_color, (x, y), 10)
+            # 创建带透明度的颜色
+            miner_color = (*player_color, alpha) if alpha < 255 else player_color
+            if alpha < 255:
+                # 如果有透明度，需要创建带透明度的表面
+                s = pygame.Surface((20, 20), pygame.SRCALPHA)
+                pygame.draw.circle(s, miner_color, (10, 10), 10)
+                self.screen.blit(s, (x-10, y-10))
+            else:
+                pygame.draw.circle(self.screen, player_color, (x, y), 10)
         elif unit_type == 'tank' or unit_type == 'infantry':
             # 使用坦克精灵表绘制
             if self.tank_sprites:
@@ -319,6 +329,14 @@ class GameRenderer:
                 # 缩放到合适的尺寸 (80x80)
                 scaled_sprite = pygame.transform.scale(sprite, (80, 80))
                 
+                # 如果单位透明度不是默认值，需要调整精灵的透明度
+                if alpha < 255:
+                    # 创建一个带alpha通道的新表面
+                    temp_surface = pygame.Surface((80, 80), pygame.SRCALPHA)
+                    temp_surface.blit(scaled_sprite, (0, 0))
+                    temp_surface.set_alpha(alpha)
+                    scaled_sprite = temp_surface
+                
                 # 根据玩家ID应用不同的效果
                 if str(player_id) == "1":
                     # 玩家1应用红色效果
@@ -340,19 +358,33 @@ class GameRenderer:
                     self.screen.blit(scaled_sprite, (x - 40, y - 40))
             else:
                 # 如果没有加载精灵表，回退到原来的绘制方法
-                pygame.draw.polygon(self.screen, player_color, [
-                    (x, y-12),
-                    (x-10, y+8),
-                    (x+10, y+8)
-                ])
+                unit_color = (*player_color, alpha) if alpha < 255 else player_color
+                if alpha < 255:
+                    s = pygame.Surface((20, 20), pygame.SRCALPHA)
+                    pygame.draw.polygon(s, unit_color, [(10, 0), (0, 20), (20, 20)])
+                    self.screen.blit(s, (x-10, y-10))
+                else:
+                    pygame.draw.polygon(self.screen, player_color, [
+                        (x, y-12),
+                        (x-10, y+8),
+                        (x+10, y+8)
+                    ])
         else:
-            pygame.draw.circle(self.screen, player_color, (x, y), 8)
+            unit_color = (*player_color, alpha) if alpha < 255 else player_color
+            if alpha < 255:
+                s = pygame.Surface((16, 16), pygame.SRCALPHA)
+                pygame.draw.circle(s, unit_color, (8, 8), 8)
+                self.screen.blit(s, (x-8, y-8))
+            else:
+                pygame.draw.circle(self.screen, player_color, (x, y), 8)
         
-        # 绘制血条
-        health_width = 30
-        health_ratio = health / 100
-        pygame.draw.rect(self.screen, (255, 0, 0), (x-15, y-20, health_width, 4))
-        pygame.draw.rect(self.screen, (0, 255, 0), (x-15, y-20, health_width * health_ratio, 4))
+        # 只有在单位还有生命值时才绘制血条
+        if health > 0:
+            # 绘制血条
+            health_width = 30
+            health_ratio = health / 100
+            pygame.draw.rect(self.screen, (255, 0, 0), (x-15, y-20, health_width, 4))
+            pygame.draw.rect(self.screen, (0, 255, 0), (x-15, y-20, health_width * health_ratio, 4))
         
         # 检查是否选中
         if hasattr(unit, 'id'):
@@ -361,7 +393,13 @@ class GameRenderer:
             unit_id = unit['id']
             
         if unit_id in self.client.selected_units:
-            pygame.draw.circle(self.screen, self.colors['selected'], (x, y), 15, 2)
+            selection_color = (*self.colors['selected'], alpha) if alpha < 255 else self.colors['selected']
+            if alpha < 255:
+                s = pygame.Surface((30, 30), pygame.SRCALPHA)
+                pygame.draw.circle(s, selection_color, (15, 15), 15, 2)
+                self.screen.blit(s, (x-15, y-15))
+            else:
+                pygame.draw.circle(self.screen, self.colors['selected'], (x, y), 15, 2)
     
     def apply_color_effect(self, surface, target_color):
         """

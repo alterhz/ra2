@@ -1,4 +1,5 @@
 import math
+import pygame
 
 
 class Unit:
@@ -27,7 +28,10 @@ class Unit:
         6=(67.5, 112.5), 
         7=(112.5, 157.5)
         """
-        self.direction = 0  
+        self.direction = 0
+        # 添加透明度属性，用于实现单位死亡时的淡出效果
+        self.alpha = 255
+    
     def move_to(self, target_x, target_y):
         """
         设置单位的移动目标位置
@@ -57,6 +61,10 @@ class Unit:
             self.is_moving = False
             self.x = self.target_x
             self.y = self.target_y
+            
+        # 如果单位血量为0，逐渐降低透明度实现淡出效果
+        if self.health <= 0:
+            self.alpha = max(0, self.alpha - 20)  # 每次减少5点透明度，直到完全透明
 
     def to_dict(self):
         """
@@ -124,3 +132,7 @@ class Unit:
         angle = math.atan2(dy, dx)
         direction = int(((angle + 9 / 8 * math.pi) / (2 * math.pi)) * 8) % 8
         return direction
+
+    # tostring
+    def __str__(self):
+        return f"Unit(id={self.id}, player_id={self.player_id}, type={self.type}, x={self.x}, y={self.y}, target_x={self.target_x}, target_y={self.target_y}, health={self.health}, speed={self.speed}, direction={self.direction})"

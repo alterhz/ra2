@@ -17,6 +17,7 @@ class Bullet:
         self.is_exploding = False  # 是否正在爆炸
         self.explosion_frame = 0  # 爆炸动画帧
         self.max_explosion_frames = 15  # 总共16帧爆炸动画(2行8列，去掉第一帧飞行)
+        self.has_dealt_damage = False  # 是否已经造成伤害
         
         # 计算移动方向
         dx = target_x - start_x
@@ -44,7 +45,7 @@ class Bullet:
             print(f"加载子弹爆炸效果失败: {e}")
             self.explosion_sprites = None
     
-    def update(self):
+    def update(self, game_state=None):
         """更新子弹状态"""
         if not self.is_active:
             return
@@ -67,9 +68,36 @@ class Bullet:
                 self.y += self.dy * self.speed
         else:
             # 爆炸状态
+            # 在第一帧爆炸时检测并造成伤害
+            if self.explosion_frame == 0 and not self.has_dealt_damage:
+                if game_state is not None:
+                    self.deal_damage(game_state)
+                self.has_dealt_damage = True
+                
             self.explosion_frame += 1
             if self.explosion_frame >= self.max_explosion_frames:
                 self.is_active = False  # 爆炸结束，子弹消失
+    
+    def deal_damage(self, game_state):
+        """对爆炸范围内的敌方单位造成伤害"""
+        if 'units' not in game_state:
+            return
+            
+        # 检查范围内的所有单位
+        for unit_id, unit in game_state['units'].items():
+            # 计算单位与爆炸点的距离
+            dx = unit.x - self.x
+            dy = unit.y - self.y
+            distance = math.sqrt(dx * dx + dy * dy)
+            
+            # 如果在32像素范围内，则造成伤害
+            if distance <= 30:
+                # 对单位造成伤害（这里简单地减少25点血量）
+                unit.health -= 25
+                # 确保血量不低于0
+                if unit.health < 0:
+                    unit.health = 0
+                print(f"单位 {unit_id} 在爆炸范围内，受到25点伤害，剩余血量: {unit.health}")
     
     def draw(self, screen):
         """绘制子弹"""

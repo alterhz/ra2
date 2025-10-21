@@ -488,6 +488,7 @@ class FrameSyncClient:
     def update_game_state(self):
         """更新游戏状态"""
         # 更新单位位置
+        units_to_remove = []
         for unit_id, unit in self.game_state['units'].items():
             old_x, old_y = unit.x, unit.y
             unit.update_position()
@@ -496,6 +497,20 @@ class FrameSyncClient:
             if not unit.is_moving and (old_x != unit.x or old_y != unit.y):
                 # 单位停止移动，绑定到网格
                 self.grid_manager.bind_unit_to_grid(unit)
+            
+            # 检查单位是否已经完全透明（血量为0且alpha为0），如果是则标记为待移除
+            if unit.health <= 0 and unit.alpha <= 0:
+                units_to_remove.append(unit_id)
+        
+        # 移除完全透明的单位
+        for unit_id in units_to_remove:
+            if unit_id in self.game_state['units']:
+                # 从网格管理器中解绑
+                self.grid_manager.unbind_unit_from_grid(self.game_state['units'][unit_id])
+                del self.game_state['units'][unit_id]
+                # 同时从选中单位列表中移除
+                if unit_id in self.selected_units:
+                    self.selected_units.remove(unit_id)
         
         # 更新子弹状态
         current_time = time.time()
@@ -524,7 +539,7 @@ class FrameSyncClient:
         # 更新所有子弹
         bullets_to_remove = []
         for bullet_id, bullet in self.bullets.items():
-            bullet.update()
+            bullet.update(self.game_state)
             if not bullet.is_active:
                 bullets_to_remove.append(bullet_id)
         
