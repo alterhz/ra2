@@ -4,7 +4,7 @@ import math
 
 
 class Bullet:
-    def __init__(self, bullet_id, start_x, start_y, target_x, target_y, speed=5.0):
+    def __init__(self, bullet_id, start_x, start_y, target_x, target_y, shooter_player_id=None, speed=5.0):
         self.id = bullet_id
         self.start_x = start_x
         self.start_y = start_y
@@ -12,6 +12,7 @@ class Bullet:
         self.y = start_y
         self.target_x = target_x
         self.target_y = target_y
+        self.shooter_player_id = shooter_player_id  # 发射子弹的玩家ID
         self.speed = speed
         self.is_active = True  # 子弹是否还在飞行中
         self.is_exploding = False  # 是否正在爆炸
@@ -92,12 +93,15 @@ class Bullet:
             
             # 如果在32像素范围内，则造成伤害
             if distance <= 30:
-                # 对单位造成伤害（这里简单地减少25点血量）
-                unit.health -= 25
-                # 确保血量不低于0
-                if unit.health < 0:
-                    unit.health = 0
-                print(f"单位 {unit_id} 在爆炸范围内，受到25点伤害，剩余血量: {unit.health}")
+                # 只对敌方单位造成伤害（玩家ID不同的单位）
+                # 如果没有设置shooter_player_id，则对所有单位造成伤害（向后兼容）
+                if self.shooter_player_id is None or unit.player_id != self.shooter_player_id:
+                    # 对单位造成伤害（这里简单地减少25点血量）
+                    unit.health -= 25
+                    # 确保血量不低于0
+                    if unit.health < 0:
+                        unit.health = 0
+                    print(f"单位 {unit_id} 在爆炸范围内，受到25点伤害，剩余血量: {unit.health}")
     
     def draw(self, screen):
         """绘制子弹"""

@@ -335,18 +335,19 @@ class FrameSyncClient:
 
             
             # 创建初始单位
-            for i in range(5):
-                unit_id = f"{player_id}_{i}"
-                unit = Unit(
-                    unit_id=unit_id,
-                    player_id=int(player_id),
-                    unit_type='infantry',
-                    x=base_x + i * 32,
-                    y=base_y
-                )
-                # 绑定单位到网格
-                self.grid_manager.bind_unit_to_grid(unit)
-                self.game_state['units'][unit_id] = unit
+            # for i in range(5):
+            #     unit_id = f"{player_id}_{i}"
+            #     unit = Unit(
+            #         unit_id=unit_id,
+            #         player_id=int(player_id),
+            #         # unit_type='infantry',
+            #         unit_type='infantry',
+            #         x=base_x + i * 32,
+            #         y=base_y
+            #     )
+            #     # 绑定单位到网格
+            #     self.grid_manager.bind_unit_to_grid(unit)
+            #     self.game_state['units'][unit_id] = unit
             
             # 创建初始建筑
             building_id = f"{player_id}_base"
@@ -512,28 +513,50 @@ class FrameSyncClient:
                 if unit_id in self.selected_units:
                     self.selected_units.remove(unit_id)
         
-        # 更新子弹状态
+        # 处理单位自动攻击
         current_time = time.time()
-        # 检查是否有选中的单位且距离上次发射子弹已经过了指定间隔
-        if (self.selected_units and 
-            current_time - self.last_bullet_time >= self.bullet_interval):
-            # 获取鼠标位置
-            mouse_x, mouse_y = pygame.mouse.get_pos()
-            # 调整子弹在格子中心点
-            mouse_x, mouse_y = self.adjust_bullet_position(mouse_x, mouse_y)
-            # 从选中的单位中选择一个发射子弹
-            shooter_unit = self.game_state['units'][self.selected_units[0]]
-            # 创建子弹ID
-            bullet_id = f"bullet_{int(current_time * 1000)}"
-            # 创建子弹对象
-            bullet = Bullet(bullet_id, shooter_unit.x, shooter_unit.y, mouse_x, mouse_y)
-            # 添加到子弹列表
-            self.bullets[bullet_id] = bullet
-            # 更新上次发射子弹时间
-            self.last_bullet_time = current_time
-            # TODO调整unit朝向子弹方向
-            direction = shooter_unit.cal_direction(shooter_unit.x, shooter_unit.y, mouse_x, mouse_y)
-            shooter_unit.direction = direction
+        for unit_id, unit in self.game_state['units'].items():
+            # 检查是否是坦克类型单位且血量大于0
+            if unit.type == 'tank' and unit.health > 0:
+                # 检查是否到了攻击间隔
+                if current_time - unit.last_attack_time >= unit.attack_interval:
+                    # 寻找范围内的敌方单位
+                    target_unit = self.find_nearest_enemy_unit(unit, unit.attack_range)
+                    if target_unit:
+                        # 创建子弹攻击目标单位
+                        bullet_id = f"bullet_{int(current_time * 1000)}_{unit_id}"
+                        # 子弹从当前单位位置发射，目标是敌方单位位置
+                        bullet = Bullet(bullet_id, unit.x, unit.y, target_unit.x, target_unit.y, unit.player_id)
+                        # 添加到子弹列表
+                        self.bullets[bullet_id] = bullet
+                        # 更新上次攻击时间
+                        unit.last_attack_time = current_time
+                        # 调整单位朝向
+                        direction = unit.cal_direction(unit.x, unit.y, target_unit.x, target_unit.y)
+                        unit.direction = direction
+        
+        # 更新子弹状态（玩家控制的单位发射子弹）
+        # current_time = time.time()
+        # # 检查是否有选中的单位且距离上次发射子弹已经过了指定间隔
+        # if (self.selected_units and 
+        #     current_time - self.last_bullet_time >= self.bullet_interval):
+        #     # 获取鼠标位置
+        #     mouse_x, mouse_y = pygame.mouse.get_pos()
+        #     # 调整子弹在格子中心点
+        #     mouse_x, mouse_y = self.adjust_bullet_position(mouse_x, mouse_y)
+        #     # 从选中的单位中选择一个发射子弹
+        #     shooter_unit = self.game_state['units'][self.selected_units[0]]
+        #     # 创建子弹ID
+        #     bullet_id = f"bullet_{int(current_time * 1000)}"
+        #     # 创建子弹对象
+        #     bullet = Bullet(bullet_id, shooter_unit.x, shooter_unit.y, mouse_x, mouse_y, shooter_unit.player_id)
+        #     # 添加到子弹列表
+        #     self.bullets[bullet_id] = bullet
+        #     # 更新上次发射子弹时间
+        #     self.last_bullet_time = current_time
+        #     # TODO调整unit朝向子弹方向
+        #     direction = shooter_unit.cal_direction(shooter_unit.x, shooter_unit.y, mouse_x, mouse_y)
+        #     shooter_unit.direction = direction
 
         
         # 更新所有子弹
@@ -682,3 +705,38 @@ class FrameSyncClient:
         """根据玩家列表更新游戏对象"""
         # 这里可以添加根据玩家列表更新游戏对象的逻辑
         pass
+
+    def find_nearest_enemy_unit(self, unit, range_limit):
+        """
+        查找指定单位范围内最近的敌方单位
+        :param unit: 当前单位
+        :param range_limit: 搜索范围（像素）
+        :return: 最近的敌方单位，如果没有则返回None
+        """
+        nearest_enemy = None
+        min_distance = float('inf')
+        
+        for target_unit_id, target_unit in self.game_state['units'].items():
+            # 排除自己
+            if target_unit_id == unit.id:
+                continue
+            
+            # 只攻击敌方单位（玩家ID不同）
+            if target_unit.player_id == unit.player_id:
+                continue
+
+            # 目标血量大于0
+            if target_unit.health <= 0:
+                continue
+            
+            # 计算距离
+            dx = target_unit.x - unit.x
+            dy = target_unit.y - unit.y
+            distance = math.sqrt(dx * dx + dy * dy)
+            
+            # 检查是否在范围内且比当前最近的单位更近
+            if distance <= range_limit and distance < min_distance:
+                min_distance = distance
+                nearest_enemy = target_unit
+        
+        return nearest_enemy

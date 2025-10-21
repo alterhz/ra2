@@ -31,6 +31,10 @@ class Unit:
         self.direction = 0
         # 添加透明度属性，用于实现单位死亡时的淡出效果
         self.alpha = 255
+        # 添加自动攻击相关属性
+        self.last_attack_time = 0  # 上次攻击时间
+        self.attack_interval = 1.0  # 攻击间隔（秒）
+        self.attack_range = 100  # 攻击范围（像素）
     
     def move_to(self, target_x, target_y):
         """
@@ -44,7 +48,6 @@ class Unit:
         # 计算移动方向, 将角度转换为8个方向之一 (0-7)
         self.direction = self.cal_direction(self.x, self.y, target_x, target_y)
             
-
     def update_position(self):
         """
         更新单位的位置，朝目标位置移动
@@ -64,7 +67,7 @@ class Unit:
             
         # 如果单位血量为0，逐渐降低透明度实现淡出效果
         if self.health <= 0:
-            self.alpha = max(0, self.alpha - 20)  # 每次减少5点透明度，直到完全透明
+            self.alpha = max(0, self.alpha - 5)  # 每次减少5点透明度，直到完全透明
 
     def to_dict(self):
         """
