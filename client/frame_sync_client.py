@@ -579,7 +579,7 @@ class FrameSyncClient:
 
     def get_time_ms(self):
         """获取当前时间（毫秒）"""
-        return int(time.time() * 1000)
+        return self.current_frame * 50
 
     def run_frame(self):
         """运行客户端帧逻辑"""

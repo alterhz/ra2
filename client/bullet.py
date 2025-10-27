@@ -86,13 +86,15 @@ class Bullet:
             
         # 检查范围内的所有单位
         for unit_id, unit in game_state['units'].items():
-            # 计算单位与爆炸点的距离
+            # 计算单位与爆炸点的距离（使用整数运算避免浮点误差）
             dx = unit.x - int(self.x)
             dy = unit.y - int(self.y)
-            distance = int(math.sqrt(dx * dx + dy * dy))
+            # 使用距离的平方避免开方运算，提高性能和一致性
+            distance_sq = dx * dx + dy * dy
             
-            # 如果在32像素范围内，则造成伤害
-            if distance <= 30:
+            # 如果在32像素范围内，则造成伤害（使用平方比较避免开方）
+            range_limit = 30
+            if distance_sq <= range_limit * range_limit:
                 # 只对敌方单位造成伤害（玩家ID不同的单位）
                 # 如果没有设置shooter_player_id，则对所有单位造成伤害（向后兼容）
                 if self.shooter_player_id is None or unit.player_id != self.shooter_player_id:
